@@ -33,6 +33,7 @@ def write_json(name: str, payload: dict[str, Any]) -> Path:
     ) as f:
         json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
         tmp = Path(f.name)
+    tmp.chmod(0o644)
     tmp.replace(target)
     return target
 
