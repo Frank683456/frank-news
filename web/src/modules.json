@@ -1,0 +1,10 @@
+[
+  { "id": "briefing", "title": "今日晨报", "component": "Briefing", "size": "full", "enabled": true },
+  { "id": "market", "title": "市场速览", "component": "Market", "size": "l", "enabled": true },
+  { "id": "econ", "title": "经济日历", "component": "EconCalendar", "size": "l", "enabled": true },
+  { "id": "kr36", "title": "36氪热榜", "component": "Kr36", "size": "m", "enabled": true },
+  { "id": "zhihu", "title": "知乎热榜", "component": "Zhihu", "size": "m", "enabled": true },
+  { "id": "calendar", "title": "倒计时", "component": "Calendar", "size": "m", "enabled": true },
+  { "id": "blog", "title": "博客最新", "component": "BlogFeed", "size": "l", "enabled": true },
+  { "id": "archive", "title": "晨报存档", "component": "Archive", "size": "l", "enabled": true }
+]

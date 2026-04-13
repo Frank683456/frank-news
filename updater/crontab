@@ -1,0 +1,12 @@
+# Frank Dashboard — supercronic crontab
+# 格式：minute hour day month weekday command
+
+*/5  *  *  *  *  cd /app && python -m fetchers.market
+0    *  *  *  *  cd /app && python -m fetchers.blog_feed
+*/20 *  *  *  *  cd /app && python -m fetchers.kr36
+*/20 *  *  *  *  cd /app && python -m fetchers.zhihu
+0    */6 *  *  *  cd /app && python -m fetchers.econ
+5    0  *  *  *  cd /app && python -m fetchers.daily_image
+*/15 *  *  *  *  cd /app && python -m fetchers.hitokoto
+0    */2 *  *  *  cd /app && python -m fetchers.calendar
+*/10 *  *  *  *  cd /app && python -m fetchers.archive

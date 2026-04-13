@@ -1,0 +1,123 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Frank Dashboard Briefing Artifact",
+  "description": "Schema for Claude-generated morning briefing JSON, rendered as an Artifact-style card on the dashboard.",
+  "type": "object",
+  "required": ["date", "title", "sections", "updatedAt"],
+  "properties": {
+    "date": { "type": "string", "description": "YYYY-MM-DD" },
+    "title": { "type": "string" },
+    "subtitle": { "type": "string" },
+    "mood": {
+      "type": "string",
+      "enum": ["bull", "bear", "neutral", "volatile"],
+      "description": "Overall market mood; drives accent color"
+    },
+    "highlights": {
+      "type": "array",
+      "description": "3-5 key takeaways shown at top as chips",
+      "items": { "type": "string" }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "blocks"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "icon": { "type": "string", "description": "Emoji or icon name" },
+          "blocks": {
+            "type": "array",
+            "items": { "$ref": "#/definitions/block" }
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "url": { "type": "string" }
+        }
+      }
+    },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "definitions": {
+    "block": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "properties": {
+            "type": { "const": "paragraph" },
+            "text": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "items"],
+          "properties": {
+            "type": { "const": "list" },
+            "ordered": { "type": "boolean" },
+            "items": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "properties": {
+            "type": { "const": "quote" },
+            "text": { "type": "string" },
+            "cite": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "tone", "text"],
+          "properties": {
+            "type": { "const": "callout" },
+            "tone": { "type": "string", "enum": ["info", "warn", "up", "down"] },
+            "title": { "type": "string" },
+            "text": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "rows"],
+          "properties": {
+            "type": { "const": "table" },
+            "headers": { "type": "array", "items": { "type": "string" } },
+            "rows": {
+              "type": "array",
+              "items": { "type": "array", "items": { "type": ["string", "number"] } }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "metrics"],
+          "properties": {
+            "type": { "const": "kpi" },
+            "metrics": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["label", "value"],
+                "properties": {
+                  "label": { "type": "string" },
+                  "value": { "type": "string" },
+                  "delta": { "type": "string" },
+                  "trend": { "type": "string", "enum": ["up", "down", "flat"] }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

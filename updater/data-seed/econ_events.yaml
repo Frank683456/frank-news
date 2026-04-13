@@ -1,0 +1,38 @@
+# Upcoming high-impact macro events. Keep dates QUOTED as strings.
+# importance: 1 (low) - 3 (high)
+
+- date: "2026-04-15"
+  time: "20:30"
+  country: US
+  name: CPI 通胀数据
+  importance: 3
+
+- date: "2026-04-16"
+  time: "20:30"
+  country: US
+  name: 零售销售
+  importance: 2
+
+- date: "2026-04-17"
+  time: "10:00"
+  country: CN
+  name: GDP / 工业增加值
+  importance: 3
+
+- date: "2026-04-22"
+  time: "02:00"
+  country: US
+  name: FOMC 利率决议
+  importance: 3
+
+- date: "2026-04-24"
+  time: "20:30"
+  country: US
+  name: GDP 初值
+  importance: 3
+
+- date: "2026-04-25"
+  time: "20:30"
+  country: US
+  name: PCE 通胀
+  importance: 3

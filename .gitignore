@@ -1,0 +1,14 @@
+.env
+data/*.json
+!data/.gitkeep
+node_modules/
+web/dist/
+web/public/data
+web/tsconfig.tsbuildinfo
+.venv/
+**/__pycache__/
+**/*.pyc
+.DS_Store
+*.log
+.idea/
+.vscode/

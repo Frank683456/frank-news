@@ -1,0 +1,24 @@
+# Personal countdowns. Keep dates QUOTED as strings.
+# Prefix holiday names: 🇺🇸 US / 🇨🇳 CN / ∅ personal.
+
+# --- CN ---
+- name: 🇨🇳 五一假期
+  date: "2026-05-01"
+- name: 🇨🇳 端午节
+  date: "2026-06-19"
+- name: 🇨🇳 国庆节
+  date: "2026-10-01"
+- name: 🇨🇳 春节
+  date: "2027-02-06"
+
+# --- US ---
+- name: 🇺🇸 Memorial Day
+  date: "2026-05-25"
+- name: 🇺🇸 Independence Day
+  date: "2026-07-04"
+- name: 🇺🇸 Labor Day
+  date: "2026-09-07"
+- name: 🇺🇸 Thanksgiving
+  date: "2026-11-26"
+- name: 🇺🇸 Christmas
+  date: "2026-12-25"
