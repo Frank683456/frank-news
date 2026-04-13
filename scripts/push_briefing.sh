@@ -33,11 +33,22 @@ md = pathlib.Path(sys.argv[2]).read_text()
 pathlib.Path(sys.argv[3]).write_text(tpl.replace('{{MARKDOWN_CONTENT}}', md))
 " "$PROMPT_TEMPLATE" "$MD" "$TMP_PROMPT"
 
-echo "[push_briefing] generating Artifact JSON..."
-claude -p --output-format text < "$TMP_PROMPT" > "$OUT.tmp"
-
-# Validate it parses.
-python3 -c "import json, sys; json.load(open(sys.argv[1]))" "$OUT.tmp"
+# 调 Claude 生成 JSON,失败最多重试 1 次(共 2 次调用,硬上限,防烧额度)
+MAX_ATTEMPTS=2
+attempt=1
+while true; do
+    echo "[push_briefing] generating Artifact JSON (attempt $attempt/$MAX_ATTEMPTS)..."
+    claude -p --output-format text < "$TMP_PROMPT" > "$OUT.tmp"
+    if python3 -c "import json, sys; json.load(open(sys.argv[1]))" "$OUT.tmp" 2>/dev/null; then
+        break
+    fi
+    echo "[push_briefing] JSON invalid on attempt $attempt"
+    if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+        echo "[push_briefing] giving up after $MAX_ATTEMPTS attempts"
+        exit 1
+    fi
+    attempt=$((attempt + 1))
+done
 mv "$OUT.tmp" "$OUT"
 
 if [[ "$DEST" == "local" ]]; then
