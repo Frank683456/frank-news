@@ -30,5 +30,4 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
     volumes:
       - ./data:/data
-      - ./updater/crontab:/app/crontab:ro
     command: ["supercronic", "-json", "/app/crontab"]
