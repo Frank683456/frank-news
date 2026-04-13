@@ -16,7 +16,7 @@ OUT_DIR="${BRIEFING_OUT_DIR:-$HOME/briefing-archive}"
 #   "local"          → write to $PROJECT_DIR/data/ (dev / testing)
 #   "user@host:path" → scp to remote
 # default: try monitor:/opt/frank-dashboard/data/, fall back to local if monitor unreachable
-DEST="${DASHBOARD_DEST:-monitor:/opt/frank-dashboard/data/}"
+DEST="${DASHBOARD_DEST:-monitor:/opt/frank-news/data/}"
 
 mkdir -p "$OUT_DIR"
 OUT="$OUT_DIR/briefing-$DATE.json"

@@ -64,12 +64,24 @@ Cloudflare DNS A `dashboard.frank2019.me` → 服务器 IP，TLS。
 2. `web/src/modules/<Name>.tsx` — 读 JSON 渲染
 3. `web/src/modules.json` — 加一条 `{id, title, component, size, enabled}`
 
-## 晨报生成
+## 晨报模块（可选 / 自带内容管线）
 
-`morning-briefing-tg/briefing.sh` 末尾加:
+"今日晨报" 和 "晨报存档" 两个模块**依赖本地内容生成**，不是开箱即用：
+
+- 原始晨报（markdown）由本地脚本生成（示例：`morning-briefing-tg/briefing.sh`，用 `claude -p` + Web Search）
+- `scripts/push_briefing.sh` 把 markdown → Artifact JSON → scp 到服务器 `/data/briefing-*.json`
+- 没配这条链路 → 前端该模块保持 404/空（不影响其他模块）
+
+**接入方式**（Fork 使用者按需改）:
 ```bash
-~/projects/frank-dashboard/scripts/push_briefing.sh "$MARKDOWN_FILE"
+# 本地晨报脚本末尾加一行
+/path/to/frank-news/scripts/push_briefing.sh "$MARKDOWN_FILE"
+
+# 或设环境变量指定服务器路径
+DASHBOARD_DEST=user@host:/opt/frank-news/data/ ./push_briefing.sh ...
 ```
+
+**不想要这个模块**：改 `web/src/modules.json`，把 `briefing` 和 `archive` 的 `enabled` 设为 `false`，重新 build。
 
 ## 多源交叉验证
 
