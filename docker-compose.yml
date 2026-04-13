@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.web
-    image: ghcr.io/frank683456/frank-dashboard-web:latest
+    image: ghcr.io/frank683456/frank-news-web:latest
     container_name: frank-dashboard-web
     restart: unless-stopped
     ports:
@@ -21,7 +21,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.updater
-    image: ghcr.io/frank683456/frank-dashboard-updater:latest
+    image: ghcr.io/frank683456/frank-news-updater:latest
     container_name: frank-dashboard-updater
     restart: unless-stopped
     env_file:
