@@ -1,5 +1,5 @@
-import { Card } from '../framework/Card'
 import { useJson } from '../framework/useJson'
+import { ColHead } from '../framework/Section'
 
 type Event = { name: string; date: string }
 type CalData = { events: Event[]; updatedAt: string }
@@ -19,60 +19,68 @@ function stripFlag(name: string): string {
   return name.replace(/^🇨🇳\s*|^🇺🇸\s*/, '')
 }
 
-function EventList({ items, limit }: { items: Event[]; limit: number }) {
+function Group({ label, items, limit }: { label: string; items: Event[]; limit: number }) {
   const rows = items.slice(0, limit)
+  if (rows.length === 0) return null
   return (
-    <div>
+    <>
+      <div className="cd-group">{label}</div>
       {rows.map((e, i) => {
         const n = daysUntil(e.date)
         const urgent = n >= 0 && n < 7
+        const past = n < 0
         return (
-          <div key={i} style={{
-            display: 'flex', justifyContent: 'space-between',
-            padding: '5px 0', fontSize: 13,
-            borderBottom: i < rows.length - 1 ? '1px solid var(--border)' : 'none',
-          }}>
-            <span>{stripFlag(e.name)}</span>
-            <span className={`num ${urgent ? '' : 'muted'}`} style={{ color: urgent ? 'var(--warn)' : undefined }}>
-              {n > 0 ? `${n} 天` : n === 0 ? '今天' : `已过 ${-n} 天`}
-            </span>
+          <div key={i} className="cd-i">
+            <div className="cd-n">{stripFlag(e.name)}</div>
+            <div className={`cd-d ${urgent ? 'urgent' : ''} ${past ? 'past' : ''}`}>
+              {n > 0 ? (
+                <>
+                  {n}
+                  <small>天</small>
+                </>
+              ) : n === 0 ? (
+                <>
+                  今
+                  <small>天</small>
+                </>
+              ) : (
+                <>
+                  {-n}
+                  <small>天前</small>
+                </>
+              )}
+            </div>
           </div>
         )
       })}
-    </div>
-  )
-}
-
-function SectionHeader({ label }: { label: string }) {
-  return (
-    <div className="muted" style={{
-      fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase',
-      marginTop: 10, marginBottom: 4,
-    }}>
-      {label}
-    </div>
+    </>
   )
 }
 
 export default function Calendar() {
   const { status, data, updatedAt, stale, error } = useJson<CalData>('/data/calendar.json', 60 * 60_000)
+
+  const total = status === 'ready' ? data.events.length : 0
+
   return (
-    <Card title="倒计时" size="m" updatedAt={updatedAt} stale={stale}>
+    <>
+      <ColHead
+        eyebrow="Countdown · 节日"
+        title="节日倒计时"
+        meta={total > 0 ? `${total} 项` : undefined}
+        updatedAt={updatedAt}
+        stale={stale}
+      />
       {status === 'loading' && <div className="loading">加载中…</div>}
       {status === 'error' && <div className="error">{error}</div>}
       {status === 'ready' && data.events.length === 0 && <div className="empty">暂无事件</div>}
-      {status === 'ready' && data.events.length > 0 && (() => {
-        const cn = data.events.filter((e) => groupOf(e.name) === 'cn')
-        const us = data.events.filter((e) => groupOf(e.name) === 'us')
-        const other = data.events.filter((e) => groupOf(e.name) === 'other')
-        return (
-          <div>
-            {cn.length > 0 && (<><SectionHeader label="🇨🇳 CN" /><EventList items={cn} limit={4} /></>)}
-            {us.length > 0 && (<><SectionHeader label="🇺🇸 US" /><EventList items={us} limit={4} /></>)}
-            {other.length > 0 && (<><SectionHeader label="其他" /><EventList items={other} limit={4} /></>)}
-          </div>
-        )
-      })()}
-    </Card>
+      {status === 'ready' && data.events.length > 0 && (
+        <div>
+          <Group label="CN · 中国" items={data.events.filter((e) => groupOf(e.name) === 'cn')} limit={4} />
+          <Group label="US · 美国" items={data.events.filter((e) => groupOf(e.name) === 'us')} limit={4} />
+          <Group label="Other · 其他" items={data.events.filter((e) => groupOf(e.name) === 'other')} limit={4} />
+        </div>
+      )}
+    </>
   )
 }

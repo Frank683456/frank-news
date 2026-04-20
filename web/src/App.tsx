@@ -1,56 +1,69 @@
 import { lazy, Suspense } from 'react'
-import modulesConfig from './modules.json'
 import { ErrorBoundary } from './framework/ErrorBoundary'
 import { useHash, parseRoute } from './framework/useHash'
+import { ChapterSection } from './framework/Section'
 import Header from './modules/Header'
+import Briefing from './modules/Briefing'
 
+const Market = lazy(() => import('./modules/Market'))
+const EconCalendar = lazy(() => import('./modules/EconCalendar'))
+const Kr36 = lazy(() => import('./modules/Kr36'))
+const Zhihu = lazy(() => import('./modules/Zhihu'))
+const Calendar = lazy(() => import('./modules/Calendar'))
+const BlogFeed = lazy(() => import('./modules/BlogFeed'))
+const Archive = lazy(() => import('./modules/Archive'))
 const BriefingDetail = lazy(() => import('./pages/BriefingDetail'))
 
-type ModuleConfig = {
-  id: string
-  title: string
-  component: string
-  size: 's' | 'm' | 'l' | 'xl' | 'full'
-  enabled: boolean
-}
-
-const loaders: Record<string, () => Promise<{ default: React.ComponentType }>> = {
-  Briefing: () => import('./modules/Briefing'),
-  Market: () => import('./modules/Market'),
-  Calendar: () => import('./modules/Calendar'),
-  BlogFeed: () => import('./modules/BlogFeed'),
-  Archive: () => import('./modules/Archive'),
-  Kr36: () => import('./modules/Kr36'),
-  Zhihu: () => import('./modules/Zhihu'),
-  EconCalendar: () => import('./modules/EconCalendar'),
+function Cell({ name, children }: { name: string; children: React.ReactNode }) {
+  return (
+    <div className="cell">
+      <ErrorBoundary name={name}>
+        <Suspense fallback={<div className="loading">加载中…</div>}>{children}</Suspense>
+      </ErrorBoundary>
+    </div>
+  )
 }
 
 function Home() {
-  const modules = (modulesConfig as ModuleConfig[]).filter((m) => m.enabled)
   return (
     <>
       <Header />
-      <div className="grid">
-        {modules.map((m) => {
-          const loader = loaders[m.component]
-          if (!loader) return null
-          const Comp = lazy(loader)
-          return (
-            <ErrorBoundary key={m.id} name={m.title}>
-              <Suspense
-                fallback={
-                  <div className={`card size-${m.size}`}>
-                    <div className="card-header"><div className="card-title">{m.title}</div></div>
-                    <div className="loading">加载中…</div>
-                  </div>
-                }
-              >
-                <Comp />
-              </Suspense>
-            </ErrorBoundary>
-          )
-        })}
-      </div>
+
+      <ErrorBoundary name="今日头条">
+        <Briefing />
+      </ErrorBoundary>
+
+      <ChapterSection title="市 场 · Markets">
+        <div className="row r2">
+          <Cell name="市场速览"><Market /></Cell>
+          <Cell name="经济日历"><EconCalendar /></Cell>
+        </div>
+      </ChapterSection>
+
+      <ChapterSection title="热 榜 · Hot">
+        <div className="row r2">
+          <Cell name="36氪"><Kr36 /></Cell>
+          <Cell name="知乎"><Zhihu /></Cell>
+        </div>
+      </ChapterSection>
+
+      <ChapterSection title="日 程 · Agenda">
+        <div className="row r2">
+          <Cell name="节日倒计时"><Calendar /></Cell>
+          <Cell name="博客最新"><BlogFeed /></Cell>
+        </div>
+      </ChapterSection>
+
+      <ChapterSection title="存 档 · Archive">
+        <div className="row r1">
+          <Cell name="晨报存档"><Archive /></Cell>
+        </div>
+      </ChapterSection>
+
+      <footer className="foot">
+        <div>© 2024 – 2026 Frank</div>
+        <div>Morning Brief · Editorial</div>
+      </footer>
     </>
   )
 }
