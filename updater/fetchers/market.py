@@ -21,8 +21,12 @@ STOCKS = [
     ("SPX", "S&P 500", "^GSPC", "^spx"),
     ("IXIC", "纳指", "^IXIC", "^ndq"),
     ("DJI", "道指", "^DJI", "^dji"),
+    ("HSI", "恒指", "^HSI", ""),
+    ("CSI300", "沪深300", "000300.SS", ""),
     ("VIX", "VIX", "^VIX", "^vix"),
     ("US10Y", "10Y 国债", "^TNX", ""),
+    ("DXY", "美元指数", "DX-Y.NYB", ""),
+    ("EURUSD", "欧元/美元", "EURUSD=X", "eurusd"),
     ("GOLD", "黄金", "GC=F", "xauusd"),
     ("WTI", "原油", "CL=F", "cl.f"),
 ]

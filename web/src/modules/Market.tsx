@@ -23,7 +23,7 @@ function fmtChange(n: number) {
 export default function Market() {
   const { status, data, updatedAt, stale, error } = useJson<MarketData>('/data/market.json', 60_000)
 
-  const items = status === 'ready' ? data.items.slice(0, 9) : []
+  const items = status === 'ready' ? data.items.slice(0, 12) : []
   // Pad to multiples of 3 for clean grid
   const padded = [...items]
   while (padded.length > 0 && padded.length % 3 !== 0) padded.push(null as unknown as Tick)
