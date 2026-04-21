@@ -21,7 +21,7 @@ export default function EconCalendar() {
       {status === 'ready' && data.events.length === 0 && <div className="empty">近期无重要事件</div>}
       {status === 'ready' && data.events.length > 0 && (
         <div>
-          {data.events.slice(0, 8).map((e, i) => (
+          {data.events.slice(0, 12).map((e, i) => (
             <div key={i} className="cal-i">
               <div className="cal-d">
                 {e.date.slice(5).replace('-', '/')} {e.time || ''}

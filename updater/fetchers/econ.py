@@ -33,7 +33,7 @@ def main():
             d = datetime.strptime(e["date"], "%Y-%m-%d").date()
         except Exception:
             continue
-        if (d - today).days < -1 or (d - today).days > 14:
+        if (d - today).days < -1 or (d - today).days > 30:
             continue
         events.append({
             "date": e["date"],

@@ -21,7 +21,7 @@ export default function BlogFeed() {
       {status === 'ready' && data.posts.length === 0 && <div className="empty">暂无博文</div>}
       {status === 'ready' && data.posts.length > 0 && (
         <div>
-          {data.posts.slice(0, 4).map((p) => (
+          {data.posts.slice(0, 5).map((p) => (
             <a
               key={p.url}
               href={p.url}

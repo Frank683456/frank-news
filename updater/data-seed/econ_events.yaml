@@ -36,3 +36,57 @@
   country: US
   name: PCE 通胀
   importance: 3
+
+- date: "2026-05-01"
+  time: "09:30"
+  country: CN
+  name: 4 月制造业 PMI
+  importance: 2
+
+- date: "2026-05-02"
+  time: "20:30"
+  country: US
+  name: 非农就业 (NFP)
+  importance: 3
+
+- date: "2026-05-09"
+  time: "09:30"
+  country: CN
+  name: CPI / PPI
+  importance: 2
+
+- date: "2026-05-13"
+  time: "20:30"
+  country: US
+  name: CPI 通胀数据
+  importance: 3
+
+- date: "2026-05-15"
+  time: "10:00"
+  country: CN
+  name: 工业增加值 / 社零
+  importance: 2
+
+- date: "2026-05-15"
+  time: "20:30"
+  country: US
+  name: 零售销售
+  importance: 2
+
+- date: "2026-05-20"
+  time: "09:15"
+  country: CN
+  name: LPR 利率决议
+  importance: 3
+
+- date: "2026-05-29"
+  time: "20:30"
+  country: US
+  name: PCE 通胀
+  importance: 3
+
+- date: "2026-06-05"
+  time: "20:30"
+  country: US
+  name: 非农就业 (NFP)
+  importance: 3
