@@ -22,15 +22,18 @@ STOCKS = [
     ("IXIC", "纳指", "^IXIC", "^ndq"),
     ("DJI", "道指", "^DJI", "^dji"),
     ("HSI", "恒指", "^HSI", ""),
+    ("N225", "日经225", "^N225", ""),
     ("CSI300", "沪深300", "000300.SS", ""),
     ("VIX", "VIX", "^VIX", "^vix"),
     ("US10Y", "10Y 国债", "^TNX", ""),
     ("DXY", "美元指数", "DX-Y.NYB", ""),
     ("EURUSD", "欧元/美元", "EURUSD=X", "eurusd"),
+    ("USDJPY", "美元/日元", "JPY=X", "usdjpy"),
     ("GOLD", "黄金", "GC=F", "xauusd"),
+    ("SILVER", "白银", "SI=F", "xagusd"),
     ("WTI", "原油", "CL=F", "cl.f"),
 ]
-CRYPTO = [("BTC", "BTC", "bitcoin"), ("ETH", "ETH", "ethereum")]
+CRYPTO = [("BTC", "BTC", "bitcoin")]
 
 HEADERS = {"User-Agent": "FrankDashboard/1.0"}
 
