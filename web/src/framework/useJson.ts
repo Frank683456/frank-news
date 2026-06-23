@@ -43,9 +43,20 @@ export function useJson<T = unknown>(url: string, refreshMs = 60_000) {
 
     load()
     const t = setInterval(load, refreshMs)
+
+    // 标签页常开做主页：后台时 setInterval 被浏览器节流/冻结，切回来会显示旧数据。
+    // 重新可见 / 重新获得焦点时立即重拉一次，让页面自愈。
+    const refetchIfVisible = () => {
+      if (document.visibilityState === 'visible') load()
+    }
+    document.addEventListener('visibilitychange', refetchIfVisible)
+    window.addEventListener('focus', refetchIfVisible)
+
     return () => {
       cancelled = true
       clearInterval(t)
+      document.removeEventListener('visibilitychange', refetchIfVisible)
+      window.removeEventListener('focus', refetchIfVisible)
     }
   }, [url, refreshMs])
 
