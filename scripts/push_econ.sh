@@ -14,6 +14,7 @@ DEST="${ECON_DEST:-monitor:/opt/frank-news/data/econ.json}"
 TODAY="$(date +%F)"
 mkdir -p "$OUT_DIR"
 OUT="$OUT_DIR/econ-$TODAY.json"
+RAW_FILE="$OUT.raw"
 
 log() { echo "[push_econ] $*"; }
 
@@ -33,21 +34,22 @@ Rules:
 - Sort by date ascending. Max 12 events.
 - Output ONLY the JSON object, nothing else."
 
-# claude 生成（允许联网搜索，不给 Write/Edit → 只能输出到 stdout）。失败重试一次，硬上限 2 次防烧额度。
+# claude 生成（允许联网搜索，不给 Write/Edit → 只能输出到 stdout；</dev/null 免 3s stdin 等待）。
+# 失败重试一次，硬上限 2 次防烧额度。注意：纯 stdout 才进 RAW_FILE，stderr 单独丢弃，避免污染 JSON。
 MAX_ATTEMPTS=2
 attempt=1
 while true; do
   log "generating econ calendar via claude (attempt $attempt/$MAX_ATTEMPTS)..."
-  RAW=$(cd "$PROJECT_DIR" && claude -p "$PROMPT" \
+  (cd "$PROJECT_DIR" && claude -p "$PROMPT" \
     --model opus \
     --allowed-tools "WebSearch,WebFetch" \
-    --permission-mode acceptEdits 2>&1) || true
+    --permission-mode acceptEdits </dev/null) > "$RAW_FILE" 2>/dev/null || true
 
-  # 提取第一个 { 到最后一个 }，校验 JSON，补 updatedAt（不信任 claude 自报时间）
-  if printf '%s' "$RAW" | python3 - "$OUT" <<'PYEOF'
+  # 从 RAW_FILE（argv，不走 stdin）提取第一个 { 到最后一个 }，校验 + 清洗，补 updatedAt（不信任 claude 自报时间）
+  if python3 - "$RAW_FILE" "$OUT" <<'PYEOF'
 import re, sys, json, pathlib
 from datetime import datetime
-raw = sys.stdin.read()
+raw = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 m = re.search(r'\{.*\}', raw, re.DOTALL)
 if not m:
     sys.exit(1)
@@ -58,7 +60,6 @@ except json.JSONDecodeError:
 events = obj.get("events")
 if not isinstance(events, list):
     sys.exit(1)
-# 清洗 + 只保留必要字段
 clean = []
 for e in events:
     if not isinstance(e, dict) or not e.get("date") or not e.get("name"):
@@ -74,15 +75,16 @@ for e in events:
     clean.append(rec)
 clean.sort(key=lambda x: (x["date"], x.get("time") or ""))
 out = {"events": clean[:12], "updatedAt": datetime.now().astimezone().isoformat(timespec="seconds")}
-pathlib.Path(sys.argv[1]).write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
+pathlib.Path(sys.argv[2]).write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
 print(f"events={len(out['events'])}")
 PYEOF
   then
+    rm -f "$RAW_FILE"
     break
   fi
-  log "JSON invalid on attempt $attempt"
+  log "JSON invalid on attempt $attempt (raw tail: $(tail -c 200 "$RAW_FILE" 2>/dev/null))"
   if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
-    log "giving up after $MAX_ATTEMPTS attempts (last raw tail: $(printf '%s' "$RAW" | tail -c 300))"
+    log "giving up after $MAX_ATTEMPTS attempts"
     exit 1
   fi
   attempt=$((attempt + 1))
