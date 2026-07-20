@@ -18,20 +18,22 @@ RAW_FILE="$OUT.raw"
 
 log() { echo "[push_econ] $*"; }
 
-PROMPT="You are a financial data assistant. Use web search to find the schedule of HIGH-IMPACT macroeconomic releases for the United States and China over the next 14 days, starting from today ($TODAY).
+PROMPT="You are a financial data assistant. Use web search to find the schedule of market-moving events for the United States and China over the next 14 days, starting from today ($TODAY): macroeconomic releases AND major S&P 500 earnings reports.
 
 Output STRICT JSON ONLY — no markdown fences, no commentary — exactly this shape:
 {\"events\":[{\"date\":\"YYYY-MM-DD\",\"time\":\"HH:MM\",\"country\":\"US\",\"name\":\"CPI 通胀\",\"importance\":3}]}
 
 Rules:
-- Only genuinely market-moving releases. US: CPI, PCE, 非农就业(NFP/jobs report), FOMC 利率决议, GDP, 零售销售, ISM PMI, 失业率, PPI. China(CN): CPI/PPI, 制造业PMI/财新PMI, GDP, 工业增加值, 社零, LPR 利率决议.
-- date: release date as YYYY-MM-DD (must fall within the next 14 days from $TODAY).
-- time: scheduled release time in the EVENT COUNTRY's local time (US events in US Eastern, China events in Beijing), 24h HH:MM. Omit the time field if genuinely unknown.
+- Macro, top tier (importance 3): US CPI, PCE, 非农就业(NFP/jobs report), FOMC 利率决议, GDP; China CPI/PPI, GDP, LPR 利率决议.
+- Macro, secondary (importance 2): US 零售销售, ISM PMI, PPI, ADP 就业, JOLTS, 消费者信心(谘商会/密歇根), 耐用品订单, 成屋/新屋销售; China 制造业PMI/财新PMI, 工业增加值, 社零, 贸易数据, 社融/信贷.
+- Macro, minor but regular (importance 1): US 初请失业金 (weekly Thursday — include each one in the window).
+- Earnings: include major S&P 500 companies reporting in the window. Mega-caps (微软/苹果/英伟达/谷歌/亚马逊/Meta/特斯拉/博通 etc.) = importance 3; other well-known large caps (银行/航空/工业/消费大票) = importance 2. name format: \"财报 · 微软 MSFT\". country: \"US\". Use the confirmed reporting date; omit if unconfirmed.
+- date: as YYYY-MM-DD (must fall within the next 14 days from $TODAY).
+- time: scheduled release time in the EVENT COUNTRY's local time (US events in US Eastern, China events in Beijing), 24h HH:MM. For earnings you may omit time (or use 盘前/盘后 knowledge to set 08:00/16:30). Omit the time field if genuinely unknown.
 - country: exactly \"US\" or \"CN\".
-- name: short Chinese label (e.g. \"CPI 通胀\", \"非农就业\", \"FOMC 利率决议\", \"制造业 PMI\", \"LPR 利率决议\").
-- importance: 3 = top-tier (CPI/PCE/NFP/FOMC/GDP/LPR), 2 = secondary, 1 = minor.
+- name: short Chinese label (e.g. \"CPI 通胀\", \"非农就业\", \"FOMC 利率决议\", \"财新制造业 PMI\", \"财报 · 英伟达 NVDA\").
 - Do NOT fabricate dates. If you are not reasonably confident an event actually falls in the window, omit it. An empty events array is acceptable if nothing major is scheduled.
-- Sort by date ascending. Max 12 events.
+- Sort by date ascending. Max 14 events — when more qualify, keep the highest importance first, then earliest date.
 - Output ONLY the JSON object, nothing else."
 
 # claude 生成（允许联网搜索，不给 Write/Edit → 只能输出到 stdout；</dev/null 免 3s stdin 等待）。

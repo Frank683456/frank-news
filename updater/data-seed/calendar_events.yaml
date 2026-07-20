@@ -1,24 +1,33 @@
 # Personal countdowns. Keep dates QUOTED as strings.
 # Prefix holiday names: 🇺🇸 US / 🇨🇳 CN / ∅ personal.
+# 农历节日公历日期逐年不同，过期后要查万年历再续（别推算）：中秋2026=9/25、端午2027=6/9 已核实。
 
 # --- CN ---
-- name: 🇨🇳 五一假期
-  date: "2026-05-01"
-- name: 🇨🇳 端午节
-  date: "2026-06-19"
+- name: 🇨🇳 中秋节
+  date: "2026-09-25"
 - name: 🇨🇳 国庆节
   date: "2026-10-01"
+- name: 🇨🇳 元旦
+  date: "2027-01-01"
 - name: 🇨🇳 春节
   date: "2027-02-06"
+- name: 🇨🇳 五一假期
+  date: "2027-05-01"
+- name: 🇨🇳 端午节
+  date: "2027-06-09"
 
 # --- US ---
-- name: 🇺🇸 Memorial Day
-  date: "2026-05-25"
-- name: 🇺🇸 Independence Day
-  date: "2026-07-04"
 - name: 🇺🇸 Labor Day
   date: "2026-09-07"
+- name: 🇺🇸 Halloween
+  date: "2026-10-31"
 - name: 🇺🇸 Thanksgiving
   date: "2026-11-26"
+- name: 🇺🇸 Black Friday
+  date: "2026-11-27"
 - name: 🇺🇸 Christmas
   date: "2026-12-25"
+- name: 🇺🇸 Memorial Day
+  date: "2027-05-31"
+- name: 🇺🇸 Independence Day
+  date: "2027-07-04"
