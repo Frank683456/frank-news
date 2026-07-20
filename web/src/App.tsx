@@ -7,7 +7,7 @@ import Briefing from './modules/Briefing'
 
 const Market = lazy(() => import('./modules/Market'))
 const EconCalendar = lazy(() => import('./modules/EconCalendar'))
-const Kr36 = lazy(() => import('./modules/Kr36'))
+const Zaobao = lazy(() => import('./modules/Zaobao'))
 const Zhihu = lazy(() => import('./modules/Zhihu'))
 const Calendar = lazy(() => import('./modules/Calendar'))
 const BlogFeed = lazy(() => import('./modules/BlogFeed'))
@@ -40,9 +40,9 @@ function Home() {
         </div>
       </ChapterSection>
 
-      <ChapterSection title="热 榜 · Hot">
+      <ChapterSection title="资 讯 · News">
         <div className="row r2">
-          <Cell name="36氪"><Kr36 /></Cell>
+          <Cell name="联合早报"><Zaobao /></Cell>
           <Cell name="知乎"><Zhihu /></Cell>
         </div>
       </ChapterSection>

@@ -141,6 +141,13 @@ h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -0.005em; }
   white-space: nowrap;
 }
 .mast-rule { height: 1px; background: var(--ink); margin-top: 3px; }
+.mast-wx {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  text-transform: none;
+}
 
 /* ============ TOPBAR ============ */
 .topbar {
@@ -377,6 +384,15 @@ h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -0.005em; }
 }
 .mk-chg.up { color: var(--up); }
 .mk-chg.down { color: var(--down); }
+.mk-spark {
+  width: 100%;
+  max-width: 76px;
+  height: 16px;
+  margin-top: 6px;
+  opacity: 0.5;
+}
+.mk-spark.up { color: var(--up); }
+.mk-spark.down { color: var(--down); }
 
 /* ============ RANKED LIST ============ */
 .lst-i {
@@ -399,6 +415,15 @@ h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -0.005em; }
   letter-spacing: 0.04em;
 }
 .lst-i.hot .lst-n { color: var(--accent); font-weight: 700; }
+.lst-i.zb { grid-template-columns: 22px 1fr auto; }
+.lst-tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--ink-4);
+  white-space: nowrap;
+  align-self: center;
+}
 .lst-t {
   font-size: 13.5px;
   line-height: 1.5;

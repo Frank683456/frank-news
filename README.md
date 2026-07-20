@@ -25,12 +25,12 @@
 | 今日晨报 | Claude Artifact JSON（Mac 推送） | — |
 | 市场速览 | Yahoo + Stooq + CoinGecko | ✅ |
 | 经济日历 | 手工 YAML (`updater/data-seed/econ_events.yaml`) | — |
-| 36氪热榜 | 官方 RSS | — |
+| 联合早报 | Google News RSS 站点过滤 + 链接解码（官方 RSS 已下线；when:1d 保新鲜） | — |
 | 知乎热榜 | `api.zhihu.com/topstory/hot-list` | — |
 | 倒计时 | 手工 YAML（CN + US 分组） | — |
 | 博客最新 | frank2019.me Halo RSS | — |
 | 晨报存档 | 扫 data/briefing-*.json | — |
-| 氛围 (Header) | 每日一图 + 一言 + LA/BJ 双时区 | — |
+| 氛围 (Header) | 一言 + LA/BJ 双时区 + LA 天气/AQI（Open-Meteo；每日一图已退役） | — |
 
 ## 本地开发
 

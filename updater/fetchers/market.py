@@ -27,7 +27,7 @@ STOCKS = [
     ("VIX", "VIX", "^VIX", "^vix"),
     ("US10Y", "10Y 国债", "^TNX", ""),
     ("DXY", "美元指数", "DX-Y.NYB", ""),
-    ("EURUSD", "欧元/美元", "EURUSD=X", "eurusd"),
+    ("USDCNY", "美元/人民币", "USDCNY=X", "usdcny"),
     ("USDJPY", "美元/日元", "JPY=X", "usdjpy"),
     ("GOLD", "黄金", "GC=F", "xauusd"),
     ("SILVER", "白银", "SI=F", "xagusd"),
@@ -50,17 +50,18 @@ def yahoo(sym: str) -> float:
     return float(result["meta"]["regularMarketPrice"])
 
 
-def yahoo_prev(sym: str) -> float:
+def yahoo_series(sym: str) -> list[float]:
+    """近 7 天日收盘序列（末位=最新），供 prev 与迷你走势线共用。"""
     r = requests.get(
         f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}",
-        params={"interval": "1d", "range": "5d"},
+        params={"interval": "1d", "range": "7d"},
         headers=HEADERS,
         timeout=10,
     )
     r.raise_for_status()
     result = r.json()["chart"]["result"][0]
     closes = [c for c in result["indicators"]["quote"][0]["close"] if c is not None]
-    return float(closes[-2])
+    return [float(c) for c in closes]
 
 
 def stooq(sym: str) -> float:
@@ -103,6 +104,17 @@ def coingecko_prev(coin_id: str, current: float) -> float:
     return current / (1 + pct)
 
 
+def coingecko_series(coin_id: str) -> list[float]:
+    r = requests.get(
+        f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart",
+        params={"vs_currency": "usd", "days": "7", "interval": "daily"},
+        headers=HEADERS,
+        timeout=10,
+    )
+    r.raise_for_status()
+    return [float(p[1]) for p in r.json().get("prices", [])]
+
+
 def main():
     items = []
     for sym, name, y, s in STOCKS:
@@ -114,16 +126,19 @@ def main():
         if price is None:
             log.warning("all sources failed for %s", sym)
             continue
+        spark: list[float] = []
         try:
-            prev = yahoo_prev(y)
+            spark = yahoo_series(y)
+            prev = spark[-2] if len(spark) >= 2 else price
         except Exception as e:
-            log.warning("prev failed for %s: %s", sym, e)
+            log.warning("series failed for %s: %s", sym, e)
             prev = price
         change = price - prev
         pct = (change / prev * 100) if prev else 0.0
         items.append({
             "symbol": sym, "name": name, "price": price,
             "change": change, "changePct": pct, "disagree": disagree,
+            "spark": spark,
         })
 
     for sym, name, coin in CRYPTO:
@@ -132,9 +147,15 @@ def main():
             prev = coingecko_prev(coin, price)
             change = price - prev
             pct = (change / prev * 100) if prev else 0.0
+            try:
+                spark = coingecko_series(coin)
+            except Exception as e:
+                log.warning("crypto series %s failed: %s", sym, e)
+                spark = []
             items.append({
                 "symbol": sym, "name": name, "price": price,
                 "change": change, "changePct": pct, "disagree": False,
+                "spark": spark,
             })
         except Exception as e:
             log.warning("crypto %s failed: %s", sym, e)

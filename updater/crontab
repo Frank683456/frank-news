@@ -3,11 +3,12 @@
 
 */5  *  *  *  *  cd /app && python -m fetchers.market
 0    *  *  *  *  cd /app && python -m fetchers.blog_feed
-*/20 *  *  *  *  cd /app && python -m fetchers.kr36
+*/20 *  *  *  *  cd /app && python -m fetchers.zaobao
 */20 *  *  *  *  cd /app && python -m fetchers.zhihu
+10   *  *  *  *  cd /app && python -m fetchers.weather
 # econ.json 改由 Mac 端 scripts/push_econ.sh（claude -p + WebSearch，launchd com.frank.econ-calendar 每日）权威生成并 scp。
 # 容器不再写 econ.json，否则会用过期手工 YAML 覆盖成空。fetchers/econ.py 与 data-seed/econ_events.yaml 保留备查。
-5    0  *  *  *  cd /app && python -m fetchers.daily_image
+# daily_image 已退役（2026-07-20）：前端报纸风改版后无处使用，fetchers/daily_image.py 保留备查。
 */15 *  *  *  *  cd /app && python -m fetchers.hitokoto
 0    */2 *  *  *  cd /app && python -m fetchers.calendar
 */10 *  *  *  *  cd /app && python -m fetchers.archive

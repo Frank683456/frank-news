@@ -3,6 +3,15 @@ import { useJson } from '../framework/useJson'
 
 type Hitokoto = { text: string; from?: string }
 
+type Weather = {
+  city: string
+  temp: number
+  desc: string
+  high: number
+  low: number
+  aqi: number | null
+}
+
 type Theme = 'light' | 'dark'
 
 const CN_WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
@@ -74,7 +83,9 @@ const Icons = {
 function useTheme(): [Theme, () => void] {
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('fd_theme') as Theme | null
-    return saved === 'dark' ? 'dark' : 'light'
+    if (saved === 'dark' || saved === 'light') return saved
+    // 首访跟随系统偏好；手动切换过则记住的选择优先
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   })
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -86,6 +97,7 @@ function useTheme(): [Theme, () => void] {
 export default function Header() {
   const now = useNow()
   const hi = useJson<Hitokoto>('/data/hitokoto.json', 5 * 60_000)
+  const wx = useJson<Weather>('/data/weather.json', 15 * 60_000)
   const [theme, toggleTheme] = useTheme()
 
   const localTZ = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles'
@@ -112,6 +124,12 @@ export default function Header() {
           <div className="mast-value">
             {primaryTime} <span style={{ color: 'var(--ink-4)', marginLeft: 8 }}>BJ {bjTime}</span>
           </div>
+          {wx.status === 'ready' && (
+            <div className="mast-wx">
+              {wx.data.city} {wx.data.desc} {wx.data.temp}° · H{wx.data.high} L{wx.data.low}
+              {wx.data.aqi != null ? ` · AQI ${wx.data.aqi}` : ''}
+            </div>
+          )}
         </div>
       </header>
       <div className="mast-rule" />

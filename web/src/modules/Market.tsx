@@ -8,6 +8,7 @@ type Tick = {
   change: number
   changePct: number
   disagree?: boolean
+  spark?: number[]
 }
 type MarketData = { items: Tick[]; updatedAt: string }
 
@@ -18,6 +19,31 @@ function fmtPrice(n: number) {
 function fmtChange(n: number) {
   const sign = n >= 0 ? '+' : ''
   return `${sign}${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+function Spark({ points, up }: { points: number[]; up: boolean }) {
+  if (points.length < 2) return null
+  const w = 64
+  const h = 16
+  const min = Math.min(...points)
+  const span = Math.max(...points) - min || 1
+  const pts = points
+    .map((p, i) => {
+      const x = (i / (points.length - 1)) * w
+      const y = h - 1.5 - ((p - min) / span) * (h - 3)
+      return `${x.toFixed(1)},${y.toFixed(1)}`
+    })
+    .join(' ')
+  return (
+    <svg
+      className={`mk-spark ${up ? 'up' : 'down'}`}
+      viewBox={`0 0 ${w} ${h}`}
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <polyline points={pts} fill="none" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
+  )
 }
 
 export default function Market() {
@@ -56,6 +82,7 @@ export default function Market() {
                   <span>{fmtChange(t.change)}</span>
                   <span>{up ? '+' : ''}{t.changePct.toFixed(2)}%</span>
                 </div>
+                {t.spark && <Spark points={t.spark} up={up} />}
               </div>
             )
           })}
