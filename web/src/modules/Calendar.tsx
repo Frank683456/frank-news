@@ -76,9 +76,9 @@ export default function Calendar() {
       {status === 'ready' && data.events.length === 0 && <div className="empty">暂无事件</div>}
       {status === 'ready' && data.events.length > 0 && (
         <div>
-          <Group label="CN · 中国" items={data.events.filter((e) => groupOf(e.name) === 'cn')} limit={5} />
-          <Group label="US · 美国" items={data.events.filter((e) => groupOf(e.name) === 'us')} limit={5} />
-          <Group label="Other · 其他" items={data.events.filter((e) => groupOf(e.name) === 'other')} limit={5} />
+          <Group label="CN · 中国" items={data.events.filter((e) => groupOf(e.name) === 'cn')} limit={6} />
+          <Group label="US · 美国" items={data.events.filter((e) => groupOf(e.name) === 'us')} limit={6} />
+          <Group label="Other · 其他" items={data.events.filter((e) => groupOf(e.name) === 'other')} limit={6} />
         </div>
       )}
     </>
