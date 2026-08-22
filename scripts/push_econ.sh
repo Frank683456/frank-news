@@ -42,8 +42,13 @@ MAX_ATTEMPTS=2
 attempt=1
 while true; do
   log "generating econ calendar via claude (attempt $attempt/$MAX_ATTEMPTS)..."
-  (cd "$PROJECT_DIR" && claude -p "$PROMPT" \
-    --model opus \
+  # ⛔ 不进 nmem 会话捕获（2026-08-21）：PATH 摘掉 /usr/local/bin（nmem 装那儿），钩子
+  #    which("nmem") 找不到就整个跳过。8-03 钉 NMEM_SPACE 那版方向反了——不是不捕获，是把
+  #    每天同一份提示词蒸馏出的重复记忆灌进正经空间（晨报实测积了 9 条）。故意不设 NMEM_SPACE：
+  #    闸门万一失效也只脏 default 收件箱（有守门员清），不脏正经空间。
+  (cd "$PROJECT_DIR" && env -u NMEM_SPACE PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" claude -p "$PROMPT" \
+    --model claude-sonnet-5 \
+    --effort high \
     --allowed-tools "WebSearch,WebFetch" \
     --permission-mode acceptEdits </dev/null) > "$RAW_FILE" 2>/dev/null || true
 

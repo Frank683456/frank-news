@@ -42,7 +42,13 @@ while true; do
     # 禁用写/执行/联网工具:这一步只是把已生成的 markdown 转成 JSON 输出到 stdout。
     # 否则 claude 会用 Write 工具把 JSON 写成 data/briefing-*.json,而 stdout 只剩闲聊,
     # 重试时又发现「文件已存在」直接放弃 → 解析永远失败(2026-05-22 翻车原因)。
-    (cd "$PROJECT_DIR" && claude -p --output-format text \
+    # ⛔ 不进 nmem 会话捕获（2026-08-21）：PATH 摘掉 /usr/local/bin（nmem 装那儿），钩子
+    #    which("nmem") 找不到就整个跳过。8-03 钉 NMEM_SPACE 那版方向反了——不是不捕获，是把
+    #    每天同一份提示词蒸馏出的重复记忆灌进正经空间（晨报实测积了 9 条）。故意不设 NMEM_SPACE：
+    #    闸门万一失效也只脏 default 收件箱（有守门员清），不脏正经空间。
+    (cd "$PROJECT_DIR" && env -u NMEM_SPACE PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" claude -p --output-format text \
+        --model claude-sonnet-5 \
+        --effort high \
         --disallowedTools "Write" "Edit" "NotebookEdit" "Bash" "WebSearch" "WebFetch" \
         < "$TMP_PROMPT") > "$OUT.raw"
     # 提取第一个 { 到最后一个 } 之间的内容，去掉前后非 JSON 噪声
