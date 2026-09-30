@@ -47,7 +47,7 @@ while true; do
     #    每天同一份提示词蒸馏出的重复记忆灌进正经空间（晨报实测积了 9 条）。故意不设 NMEM_SPACE：
     #    闸门万一失效也只脏 default 收件箱（有守门员清），不脏正经空间。
     (cd "$PROJECT_DIR" && env -u NMEM_SPACE PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" claude -p --output-format text \
-        --model claude-sonnet-5 \
+        --model claude-sonnet-5-5 \
         --effort high \
         --disallowedTools "Write" "Edit" "NotebookEdit" "Bash" "WebSearch" "WebFetch" \
         < "$TMP_PROMPT") > "$OUT.raw"
