@@ -30,11 +30,14 @@ python3 -c "
 import sys, pathlib
 tpl = pathlib.Path(sys.argv[1]).read_text()
 md = pathlib.Path(sys.argv[2]).read_text()
-pathlib.Path(sys.argv[3]).write_text(tpl.replace('{{MARKDOWN_CONTENT}}', md))
-" "$PROMPT_TEMPLATE" "$MD" "$TMP_PROMPT"
+schema = pathlib.Path(sys.argv[4]).read_text()
+# 隔离后模型没有读文件工具：提示词里「参考 schemas/artifact_briefing.json」直接把全文附上
+pathlib.Path(sys.argv[3]).write_text(tpl.replace('{{MARKDOWN_CONTENT}}', md)
+    + '\n\n## schemas/artifact_briefing.json 全文（已附上，不用再读文件）\n\n' + schema)
+" "$PROMPT_TEMPLATE" "$MD" "$TMP_PROMPT" "$SCHEMA_DIR/artifact_briefing.json"
 
 # 调 Claude 生成 JSON,失败最多重试 1 次(共 2 次调用,硬上限,防烧额度)
-# 在 PROJECT_DIR 执行，让 claude 能读到 schemas/artifact_briefing.json
+# schema 全文已附在提示词末尾（2026-09-30 起不再靠在 PROJECT_DIR 里读文件）
 MAX_ATTEMPTS=2
 attempt=1
 while true; do
@@ -46,10 +49,18 @@ while true; do
     #    which("nmem") 找不到就整个跳过。8-03 钉 NMEM_SPACE 那版方向反了——不是不捕获，是把
     #    每天同一份提示词蒸馏出的重复记忆灌进正经空间（晨报实测积了 9 条）。故意不设 NMEM_SPACE：
     #    闸门万一失效也只脏 default 收件箱（有守门员清），不脏正经空间。
-    (cd "$PROJECT_DIR" && env -u NMEM_SPACE PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" claude -p --output-format text \
+    # ⛔ 隔离（2026-09-30 实测旧跑法开工前先背 5.5 万 token：/Users/bot/CLAUDE.md 运维记录 + nmem 工作记忆
+    #    + 69 个工具 + 飞书/Claude Docs 连接器）：在家目录外的空目录跑、--setting-sources project、
+    #    --strict-mcp-config + 环境变量关连接器、--tools "" 一个工具都不给（纯转格式）。改后 2 千 token。
+    CLEAN_DIR="/Users/Shared/claude-clean/dashboard-briefing"
+    mkdir -p "$CLEAN_DIR/.claude"
+    printf '%s\n' '{"autoMemoryEnabled": false, "disableAllHooks": true}' > "$CLEAN_DIR/.claude/settings.json"
+    (cd "$CLEAN_DIR" && env -u NMEM_SPACE ENABLE_CLAUDEAI_MCP_SERVERS=false \
+        PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" claude -p --output-format text \
         --model claude-sonnet-5-5 \
         --effort high \
-        --disallowedTools "Write" "Edit" "NotebookEdit" "Bash" "WebSearch" "WebFetch" \
+        --setting-sources project --strict-mcp-config \
+        --tools "" \
         < "$TMP_PROMPT") > "$OUT.raw"
     # 提取第一个 { 到最后一个 } 之间的内容，去掉前后非 JSON 噪声
     # 再尝试自动修复字符串内未转义的 ASCII 双引号（Claude 最常踩的坑）

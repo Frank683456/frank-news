@@ -46,11 +46,19 @@ while true; do
   #    which("nmem") 找不到就整个跳过。8-03 钉 NMEM_SPACE 那版方向反了——不是不捕获，是把
   #    每天同一份提示词蒸馏出的重复记忆灌进正经空间（晨报实测积了 9 条）。故意不设 NMEM_SPACE：
   #    闸门万一失效也只脏 default 收件箱（有守门员清），不脏正经空间。
-  (cd "$PROJECT_DIR" && env -u NMEM_SPACE PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" claude -p "$PROMPT" \
+  # ⛔ 隔离（2026-09-30 实测旧跑法开工前先背 5.6 万 token：/Users/bot/CLAUDE.md 运维记录 + nmem 工作记忆
+  #    + 73 个工具 + 飞书/Claude Docs 连接器）：在家目录外的空目录跑、--setting-sources project、
+  #    --strict-mcp-config + 环境变量关连接器、--tools 只摆搜索和抓网页。改后 3 千 token。
+  CLEAN_DIR="/Users/Shared/claude-clean/econ-calendar"
+  mkdir -p "$CLEAN_DIR/.claude"
+  printf '%s\n' '{"autoMemoryEnabled": false, "disableAllHooks": true}' > "$CLEAN_DIR/.claude/settings.json"
+  (cd "$CLEAN_DIR" && env -u NMEM_SPACE ENABLE_CLAUDEAI_MCP_SERVERS=false \
+    PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" claude -p "$PROMPT" \
     --model claude-sonnet-5-5 \
     --effort high \
-    --allowed-tools "WebSearch,WebFetch" \
-    --permission-mode acceptEdits </dev/null) > "$RAW_FILE" 2>/dev/null || true
+    --setting-sources project --strict-mcp-config \
+    --tools "WebSearch,WebFetch" \
+    --allowedTools "WebSearch,WebFetch" </dev/null) > "$RAW_FILE" 2>/dev/null || true
 
   # 从 RAW_FILE（argv，不走 stdin）提取第一个 { 到最后一个 }，校验 + 清洗，补 updatedAt（不信任 claude 自报时间）
   if python3 - "$RAW_FILE" "$OUT" <<'PYEOF'
