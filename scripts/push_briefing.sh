@@ -15,8 +15,8 @@ OUT_DIR="${BRIEFING_OUT_DIR:-$HOME/briefing-archive}"
 # DASHBOARD_DEST options:
 #   "local"          → write to $PROJECT_DIR/data/ (dev / testing)
 #   "user@host:path" → scp to remote
-# default: try monitor:/opt/frank-dashboard/data/, fall back to local if monitor unreachable
-DEST="${DASHBOARD_DEST:-monitor:/opt/frank-news/data/}"
+# default: etf 监控机（ssh 别名 etf·170.9.4.14·2026-10-05 从 Blog 服务器搬来）
+DEST="${DASHBOARD_DEST:-etf:/opt/frank-news/data/}"
 
 mkdir -p "$OUT_DIR"
 OUT="$OUT_DIR/briefing-$DATE.json"

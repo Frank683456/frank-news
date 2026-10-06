@@ -10,7 +10,7 @@ export PATH="/opt/homebrew/bin:$PATH"
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 OUT_DIR="${ECON_OUT_DIR:-$HOME/briefing-archive}"
-DEST="${ECON_DEST:-monitor:/opt/frank-news/data/econ.json}"
+DEST="${ECON_DEST:-etf:/opt/frank-news/data/econ.json}"
 TODAY="$(date +%F)"
 mkdir -p "$OUT_DIR"
 OUT="$OUT_DIR/econ-$TODAY.json"

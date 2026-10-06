@@ -5,7 +5,7 @@
 ## 架构
 
 ```
-  Mac 本地 (morning-briefing-tg)             monitor 服务器
+  Mac 本地 (morning-briefing-tg)             etf 监控机
   ├── briefing.sh → TG                       ├── web (nginx)
   └── push_briefing.sh ─── scp ────────────► ├── data/ (shared volume)
                                              │   ├── briefing-*.json  ← 晨报由 Mac 推送
@@ -49,8 +49,8 @@ docker compose exec updater python -m fetchers.market
 ## 生产部署
 
 ```bash
-# monitor 服务器
-cd /opt/frank-dashboard
+# etf 监控机（ssh 别名 etf·170.9.4.14·ARM64·2026-10-05 从 Blog 服务器搬来）
+cd /opt/frank-news
 docker compose pull && docker compose up -d
 ```
 
