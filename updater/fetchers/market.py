@@ -1,11 +1,13 @@
-"""Market tickers: Yahoo (primary) + CNBC (backup & cross-check) + Eastmoney (沪深300 history).
+"""Market tickers: Yahoo (primary) + CNBC (backup & cross-check) + Tencent/Sina (沪深300 history).
 
 - Yahoo chart API: price + ~1 month of daily closes in ONE call per symbol (spark + prev close).
 - CNBC quote API: one batched call for every symbol. Used to cross-check Yahoo, and to stand in
   when Yahoo fails for a symbol. Stooq (the old backup) died 2026-10: browser bot-check on every
   endpoint, so it was removed.
-- Eastmoney kline: 沪深300 daily closes. Yahoo's 000300.SS only ever returns the latest bar, so
-  before v1.4.0 沪深300 always showed +0.00% and no sparkline.
+- Tencent kline (Sina as fallback): 沪深300 daily closes. Yahoo's 000300.SS only ever returns the
+  latest bar, so before v1.4.0 沪深300 always showed +0.00% and no sparkline. Last good bars are
+  cached in DATA_DIR so a blip at both sources doesn't drop the sparkline. (Eastmoney was tried first:
+  it starts refusing connections from the server after a handful of requests.)
 - CoinGecko for BTC (CNBC BTC.CM= as backup).
 
 All network calls run concurrently with short connect timeouts, so one dead source can no longer
@@ -13,15 +15,15 @@ stall the */5 cron round (Stooq timeouts used to drag it to ~3 minutes).
 """
 from __future__ import annotations
 
+import json
 import logging
-import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 import requests
 
-from lib.io import write_json
+from lib.io import DATA_DIR, write_json
 from lib.xverify import SourceResult, merge_numeric
 
 log = logging.getLogger("market")
@@ -47,7 +49,8 @@ STOCKS = [
     ("SILVER", "白银", "SI=F", "@SI.1", "future"),
     ("WTI", "原油", "CL=F", "@CL.1", "future"),
 ]
-EASTMONEY = {"CSI300": "1.000300"}
+CN_HISTORY = {"CSI300": "sh000300"}  # 腾讯/新浪代码
+CN_CACHE_MAX_AGE = timedelta(days=4)
 BTC = ("BTC", "BTC", "bitcoin", "BTC.CM=")
 
 
@@ -81,28 +84,45 @@ def yahoo(sym: str) -> dict:
     }
 
 
-def eastmoney(secid: str) -> list[tuple[date, float]]:
-    try:
-        return _eastmoney(secid)
-    except Exception:  # 东财偶发直接断连接（RemoteDisconnected），隔 1 秒重试一次
-        time.sleep(1)
-        return _eastmoney(secid)
-
-
-def _eastmoney(secid: str) -> list[tuple[date, float]]:
+def tencent(code: str) -> list[tuple[date, float]]:
     r = requests.get(
-        "https://push2his.eastmoney.com/api/qt/stock/kline/get",
-        params={"secid": secid, "klt": 101, "fqt": 0, "lmt": 30, "end": "20500101",
-                "fields1": "f1", "fields2": "f51,f53"},
+        "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get",
+        params={"param": f"{code},day,,,30,qfq"},
         headers=HEADERS,
         timeout=TIMEOUT,
     )
     r.raise_for_status()
-    out = []
-    for line in r.json()["data"]["klines"]:
-        d, c = line.split(",")[:2]
-        out.append((date.fromisoformat(d), float(c)))
-    return out
+    # 每根：[日期, 开, 收, 高, 低, 量]
+    return [(date.fromisoformat(k[0]), float(k[2])) for k in r.json()["data"][code]["day"]]
+
+
+def sina(code: str) -> list[tuple[date, float]]:
+    r = requests.get(
+        "https://quotes.sina.cn/cn/api/json_v2.php/CN_MarketDataService.getKLineData",
+        params={"symbol": code, "scale": 240, "ma": "no", "datalen": 30},
+        headers=HEADERS,
+        timeout=TIMEOUT,
+    )
+    r.raise_for_status()
+    return [(date.fromisoformat(k["day"]), float(k["close"])) for k in r.json()]
+
+
+def cn_history(code: str) -> list[tuple[date, float]]:
+    """腾讯 → 新浪 → 上次成功的缓存（4 天内）。成功就刷新缓存。"""
+    cache = DATA_DIR / f"cn_kline_{code}.json"
+    errors = []
+    for fn in (tencent, sina):
+        try:
+            bars = fn(code)
+            if bars:
+                cache.write_text(json.dumps([[d.isoformat(), c] for d, c in bars]), encoding="utf-8")
+                return bars
+        except Exception as e:
+            errors.append(f"{fn.__name__}: {e}")
+    if cache.exists() and datetime.now().timestamp() - cache.stat().st_mtime < CN_CACHE_MAX_AGE.total_seconds():
+        log.warning("cn history %s live sources failed, using cache (%s)", code, "; ".join(errors))
+        return [(date.fromisoformat(d), float(c)) for d, c in json.loads(cache.read_text(encoding="utf-8"))]
+    raise RuntimeError("; ".join(errors) or "no data")
 
 
 def _num(s) -> float | None:
@@ -192,7 +212,7 @@ def safe(fn, *args):
 def main():
     with ThreadPoolExecutor(max_workers=12) as pool:
         y_futs = {s[0]: pool.submit(safe, yahoo, s[2]) for s in STOCKS}
-        em_futs = {k: pool.submit(safe, eastmoney, v) for k, v in EASTMONEY.items()}
+        cn_futs = {k: pool.submit(safe, cn_history, v) for k, v in CN_HISTORY.items()}
         cn_fut = pool.submit(safe, cnbc, [s[3] for s in STOCKS if s[3]] + [BTC[3]])
         cg_fut = pool.submit(safe, coingecko)
 
@@ -209,12 +229,12 @@ def main():
         c = cn.get(csym) if csym else None
 
         bars = y["bars"] if y else []
-        if sym in em_futs:
-            em, em_err = em_futs[sym].result()
-            if em_err:
-                log.warning("eastmoney %s failed: %s", sym, em_err)
-            elif em:
-                bars = em
+        if sym in cn_futs:
+            cnh, cnh_err = cn_futs[sym].result()
+            if cnh_err:
+                log.warning("cn history %s failed: %s", sym, cnh_err)
+            elif cnh:
+                bars = cnh
         # 日线偶尔比实时价慢一拍（今天盘中价已有、今天的 K 线还没出）→ 把实时价补成今天这根
         if y and bars and bars[-1][0] < y["lastDate"]:
             bars = bars + [(y["lastDate"], y["price"])]
@@ -224,8 +244,8 @@ def main():
             results.append(SourceResult("yahoo", y["price"]))
         if c:
             results.append(SourceResult("cnbc", c["price"]))
-        if sym in em_futs and bars and not y:
-            results.append(SourceResult("eastmoney", bars[-1][1]))
+        if sym in cn_futs and bars and not y:
+            results.append(SourceResult("tencent", bars[-1][1]))
         price = results[0].value if results else None  # 主源优先，不取中位数（两源时中位数=平均）
         if price is None:
             log.warning("all sources failed for %s", sym)
