@@ -1,6 +1,6 @@
 # Frank 简报中心
 
-个人信息门户，部署在 `dashboard.frank2019.me`。
+个人信息门户，部署在 `news.frank521.com`（2026-10-06 前是 dashboard.frank2019.me，.me 在国内被墙后搬来）。
 
 ## 架构
 
@@ -54,7 +54,7 @@ cd /opt/frank-news
 docker compose pull && docker compose up -d
 ```
 
-Cloudflare DNS A `dashboard.frank2019.me` → 服务器 IP，TLS。
+Cloudflare DNS A `news.frank521.com` → 服务器 IP，TLS。
 
 ## 加新模块
 

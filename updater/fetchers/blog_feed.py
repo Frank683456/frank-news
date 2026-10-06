@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
+from urllib.parse import urlsplit, urlunsplit
 
 import feedparser
 import requests
@@ -13,7 +14,18 @@ from lib.io import write_json
 log = logging.getLogger("blog_feed")
 
 FEED_URL = os.environ.get("BLOG_FEED_URL", "https://frank2019.me/feed.xml")
+# 页面上显示的文章/封面链接换成这个域名（主域在国内打不开时用；同一个 Halo，路径不变）。空＝原样。
+PUBLIC_BASE = os.environ.get("BLOG_PUBLIC_BASE", "").rstrip("/")
 HEADERS = {"User-Agent": "FrankDashboard/1.0"}
+
+
+def public_url(url: str | None) -> str | None:
+    if not url or not PUBLIC_BASE:
+        return url
+    parts = urlsplit(url)
+    if parts.netloc != urlsplit(FEED_URL).netloc:
+        return url
+    return PUBLIC_BASE + urlunsplit(("", "", parts.path, parts.query, parts.fragment))
 
 
 def og_image(url: str) -> str | None:
@@ -56,8 +68,8 @@ def main():
             date = time.strftime("%Y-%m-%d", e.published_parsed)
         posts.append({
             "title": e.title,
-            "url": e.link,
-            "cover": cover,
+            "url": public_url(e.link),
+            "cover": public_url(cover),
             "date": date,
             "excerpt": getattr(e, "summary", "")[:120],
         })
