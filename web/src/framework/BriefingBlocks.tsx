@@ -28,7 +28,7 @@ export function BlockView({ block }: { block: Block }) {
       )
     case 'table':
       return (
-        <div className="table-wrap">
+        <div className="table-wrap" tabIndex={0}>
           <table>
             {block.headers && (
               <thead>
@@ -45,9 +45,12 @@ export function BlockView({ block }: { block: Block }) {
           </table>
         </div>
       )
-    case 'kpi':
+    case 'kpi': {
+      // 按个数排成均衡的几行（5 个=3+2、7 个=4+3），最后一行自动撑满，不留空格子
+      const n = block.metrics.length
+      const cols = Math.ceil(n / Math.ceil(n / 4))
       return (
-        <div className="kpi-grid">
+        <div className="kpi-grid" style={{ ['--cols' as string]: cols }}>
           {block.metrics.map((m, i) => {
             const cls = m.trend === 'up' ? 'up' : m.trend === 'down' ? 'down' : 'muted'
             return (
@@ -60,5 +63,6 @@ export function BlockView({ block }: { block: Block }) {
           })}
         </div>
       )
+    }
   }
 }

@@ -1,5 +1,5 @@
 import { useJson } from '../framework/useJson'
-import { ColHead } from '../framework/Section'
+import { ColHead, Skeleton } from '../framework/Section'
 
 type Post = { title: string; url: string; cover?: string; date: string; excerpt?: string }
 type BlogData = { posts: Post[]; updatedAt: string }
@@ -16,7 +16,7 @@ export default function BlogFeed() {
         updatedAt={updatedAt}
         stale={stale}
       />
-      {status === 'loading' && <div className="loading">加载中…</div>}
+      {status === 'loading' && <Skeleton rows={5} />}
       {status === 'error' && <div className="error">{error}</div>}
       {status === 'ready' && data.posts.length === 0 && <div className="empty">暂无博文</div>}
       {status === 'ready' && data.posts.length > 0 && (

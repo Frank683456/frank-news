@@ -35,6 +35,13 @@ export const moodColor: Record<NonNullable<Briefing['mood']>, string> = {
   volatile: 'var(--mood-volatile)',
 }
 
+export const moodLabel: Record<NonNullable<Briefing['mood']>, string> = {
+  bull: '偏多',
+  bear: '偏空',
+  neutral: '平稳',
+  volatile: '震荡',
+}
+
 export const toneColor: Record<Extract<Block, { type: 'callout' }>['tone'], string> = {
   info: 'var(--info)',
   warn: 'var(--warn)',

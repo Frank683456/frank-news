@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#EFE7D5" />
     <title>Frank · 晨报</title>
+    <script>
+      // 首帧就定好深浅色，避免先闪一下亮色（逻辑同 Header.tsx useTheme）
+      try {
+        var t = localStorage.getItem('fd_theme')
+        if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        document.documentElement.dataset.theme = t
+      } catch (e) {}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

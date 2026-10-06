@@ -23,14 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      return (
-        <div className="card size-m">
-          <div className="card-header">
-            <div className="card-title">{this.props.name}</div>
-          </div>
-          <div className="error">模块渲染出错：{this.state.message}</div>
-        </div>
-      )
+      return <div className="error">{this.props.name} 显示出错：{this.state.message}</div>
     }
     return this.props.children
   }

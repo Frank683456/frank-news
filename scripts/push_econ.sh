@@ -21,7 +21,7 @@ log() { echo "[push_econ] $*"; }
 PROMPT="You are a financial data assistant. Use web search to find the schedule of market-moving events for the United States and China over the next 14 days, starting from today ($TODAY): macroeconomic releases AND major S&P 500 earnings reports.
 
 Output STRICT JSON ONLY — no markdown fences, no commentary — exactly this shape:
-{\"events\":[{\"date\":\"YYYY-MM-DD\",\"time\":\"HH:MM\",\"country\":\"US\",\"name\":\"CPI 通胀\",\"importance\":3}]}
+{\"events\":[{\"date\":\"YYYY-MM-DD\",\"time\":\"HH:MM\",\"tz\":\"ET\",\"country\":\"US\",\"name\":\"CPI 通胀\",\"importance\":3},{\"date\":\"YYYY-MM-DD\",\"session\":\"盘前\",\"country\":\"US\",\"name\":\"财报 · 摩根大通 JPM\",\"importance\":2}]}
 
 Rules:
 - Macro, top tier (importance 3): US CPI, PCE, 非农就业(NFP/jobs report), FOMC 利率决议, GDP; China CPI/PPI, GDP, LPR 利率决议.
@@ -29,11 +29,12 @@ Rules:
 - Macro, minor but regular (importance 1): US 初请失业金 (weekly Thursday — include each one in the window).
 - Earnings: include major S&P 500 companies reporting in the window. Mega-caps (微软/苹果/英伟达/谷歌/亚马逊/Meta/特斯拉/博通 etc.) = importance 3; other well-known large caps (银行/航空/工业/消费大票) = importance 2. name format: \"财报 · 微软 MSFT\". country: \"US\". Use the confirmed reporting date; omit if unconfirmed.
 - date: as YYYY-MM-DD (must fall within the next 14 days from $TODAY).
-- time: scheduled release time in the EVENT COUNTRY's local time (US events in US Eastern, China events in Beijing), 24h HH:MM. For earnings you may omit time (or use 盘前/盘后 knowledge to set 08:00/16:30). Omit the time field if genuinely unknown.
+- time + tz (macro releases only): the official scheduled release time in the EVENT COUNTRY's local time, 24h HH:MM, with tz \"ET\" for US events (US Eastern) or \"BJ\" for China events (Beijing). Do NOT convert time zones yourself. Omit time and tz if genuinely unknown.
+- Earnings: NEVER give a clock time. Give session \"盘前\" (before the US open) or \"盘后\" (after the US close) when the company has announced it; omit session if unknown.
 - country: exactly \"US\" or \"CN\".
 - name: short Chinese label (e.g. \"CPI 通胀\", \"非农就业\", \"FOMC 利率决议\", \"财新制造业 PMI\", \"财报 · 英伟达 NVDA\").
 - Do NOT fabricate dates. If you are not reasonably confident an event actually falls in the window, omit it. An empty events array is acceptable if nothing major is scheduled.
-- Sort by date ascending. Max 14 events — when more qualify, keep the highest importance first, then earliest date.
+- List up to 24 qualifying events across the WHOLE 14-day window (later days matter as much as the first few). The script selects and sorts the final list itself.
 - Output ONLY the JSON object, nothing else."
 
 # claude 生成（允许联网搜索，不给 Write/Edit → 只能输出到 stdout；</dev/null 免 3s stdin 等待）。
@@ -75,21 +76,67 @@ except json.JSONDecodeError:
 events = obj.get("events")
 if not isinstance(events, list):
     sys.exit(1)
+# v1.4.0：时间统一换成洛杉矶时间（模型给事件国当地时间 + tz，换算在这里做，不让模型算）；
+# 财报只标盘前/盘后（不写凑出来的钟点）；同一天财报最多 3 家；先按重要度挑满 12 条再按日期排，
+# 避免名额被前几天占光、两周窗口后半段一条都没有。
+from datetime import date as _date, timedelta
+from zoneinfo import ZoneInfo
+PT = ZoneInfo("America/Los_Angeles")
+TZS = {"ET": ZoneInfo("America/New_York"), "BJ": ZoneInfo("Asia/Shanghai")}
+today = datetime.now(PT).date()
+end = today + timedelta(days=14)
 clean = []
 for e in events:
     if not isinstance(e, dict) or not e.get("date") or not e.get("name"):
         continue
-    rec = {
-        "date": str(e["date"]),
-        "country": str(e.get("country", "")),
-        "name": str(e["name"]),
-        "importance": int(e.get("importance", 1)),
-    }
-    if e.get("time"):
-        rec["time"] = str(e["time"])
+    try:
+        d = _date.fromisoformat(str(e["date"])[:10])
+    except ValueError:
+        continue
+    country = str(e.get("country", "")).upper()
+    if country not in ("US", "CN"):
+        continue
+    name = str(e["name"]).strip()
+    try:
+        imp = min(3, max(1, int(e.get("importance", 1))))
+    except (TypeError, ValueError):
+        imp = 1
+    rec = {"date": d.isoformat(), "country": country, "name": name, "importance": imp}
+    if name.startswith("财报"):
+        if e.get("session") in ("盘前", "盘后"):
+            rec["session"] = e["session"]
+    elif re.fullmatch(r"\d{1,2}:\d{2}", str(e.get("time", ""))):
+        hh, mm = map(int, str(e["time"]).split(":"))
+        src = TZS.get(str(e.get("tz", "")).upper()) or (TZS["BJ"] if country == "CN" else TZS["ET"])
+        try:
+            local = datetime(d.year, d.month, d.day, hh, mm, tzinfo=src).astimezone(PT)
+        except ValueError:
+            local = None
+        if local:
+            rec["date"], rec["time"] = local.date().isoformat(), local.strftime("%H:%M")
+    if not (today.isoformat() <= rec["date"] <= end.isoformat()):
+        continue
     clean.append(rec)
-clean.sort(key=lambda x: (x["date"], x.get("time") or ""))
-out = {"events": clean[:12], "updatedAt": datetime.now().astimezone().isoformat(timespec="seconds")}
+# 同名去重（模型偶尔重复列同一事件）
+seen, uniq = set(), []
+for r in clean:
+    k = (r["date"], r["name"])
+    if k not in seen:
+        seen.add(k); uniq.append(r)
+# 同一天财报最多 3 家，大票优先（同重要度保留模型给的顺序）
+per_day, capped = {}, []
+for r in sorted(uniq, key=lambda r: -r["importance"]):
+    if r["name"].startswith("财报"):
+        if per_day.get(r["date"], 0) >= 3:
+            continue
+        per_day[r["date"]] = per_day.get(r["date"], 0) + 1
+    capped.append(r)
+# 同重要度里宏观数据优先于个股财报（财报占名额最多，挤掉零售/PPI 这类数据不划算）
+picked = sorted(capped, key=lambda r: (-r["importance"], r["name"].startswith("财报"), r["date"]))[:12]
+SESSION_SORT = {"盘前": "05:00", "盘后": "13:00"}
+picked.sort(key=lambda r: (r["date"], r.get("time") or SESSION_SORT.get(r.get("session"), "99:99")))
+out = {"events": picked, "tz": "America/Los_Angeles",
+       "updatedAt": datetime.now().astimezone().isoformat(timespec="seconds")}
 pathlib.Path(sys.argv[2]).write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
 print(f"events={len(out['events'])}")
 PYEOF

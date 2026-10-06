@@ -23,9 +23,10 @@ def main():
 
     raw = yaml.safe_load(EVENTS_FILE.read_text(encoding="utf-8")) or []
     today = date.today()
-    # Keep upcoming + recently passed (7 days).
+    # 「过一个少一个」：节日当天显示「今天」，第二天就收。容器是北京时间、比洛杉矶早一天，
+    # 这里多留 1 天，由前端按浏览器本地日期把已过去的藏掉。
     raw.sort(key=lambda x: x.get("date", ""))
-    filtered = [e for e in raw if (date.fromisoformat(e["date"]) - today).days >= -7]
+    filtered = [e for e in raw if (date.fromisoformat(e["date"]) - today).days >= -1]
     write_json("calendar", {"events": filtered})
     log.info("calendar: %d events", len(filtered))
 

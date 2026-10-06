@@ -25,11 +25,13 @@ HEADERS = {
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36"
 }
 
-# (板块标签, Google News 查询)。zaobao.com.sg 现行路径：/news/china /news/world /finance
+# (板块标签, Google News 查询列表)。zaobao.com.sg 现行路径：/news/china /news/world /finance/*
+# 财经只取 /finance/world + /finance/china：整个 /finance 里一半是 /finance/singapore 本地股
+# （「星期二可关注股票」「评股论经」之类），v1.4.0 起不收。财经不够 4 条时轮流取会让中国/国际多放。
 SECTIONS = [
-    ("中国", "site:zaobao.com.sg/news/china when:1d"),
-    ("国际", "site:zaobao.com.sg/news/world when:1d"),
-    ("财经", "site:zaobao.com.sg/finance when:1d"),
+    ("中国", ["site:zaobao.com.sg/news/china when:1d"]),
+    ("国际", ["site:zaobao.com.sg/news/world when:1d"]),
+    ("财经", ["site:zaobao.com.sg/finance/world when:1d", "site:zaobao.com.sg/finance/china when:1d"]),
 ]
 PER_SECTION = 4
 MAX_AGE = timedelta(hours=36)  # 硬过滤兜底，防 when:1d 失灵混入旧闻
@@ -112,12 +114,16 @@ def save_cache(cache: dict[str, str]) -> None:
 
 def main():
     per_section: list[list[dict]] = []
-    for label, query in SECTIONS:
-        try:
-            per_section.append(fetch_section(label, query)[: PER_SECTION + 2])
-        except Exception as e:
-            log.warning("zaobao section %s failed: %s", label, e)
-            per_section.append([])
+    for label, queries in SECTIONS:
+        merged: dict[str, dict] = {}
+        for query in queries:
+            try:
+                for it in fetch_section(label, query):
+                    merged.setdefault(it["gnId"], it)
+            except Exception as e:
+                log.warning("zaobao %s query %r failed: %s", label, query, e)
+        items = sorted(merged.values(), key=lambda x: x["publishedAt"], reverse=True)
+        per_section.append(items[: PER_SECTION + 2])
 
     # 轮流取各板块（中/国际/财经交错），跨板块按标题去重
     seen: set[str] = set()

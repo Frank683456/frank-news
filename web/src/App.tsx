@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { ErrorBoundary } from './framework/ErrorBoundary'
 import { useHash, parseRoute } from './framework/useHash'
-import { ChapterSection } from './framework/Section'
+import { ChapterSection, Skeleton } from './framework/Section'
 import Header from './modules/Header'
 import Briefing from './modules/Briefing'
 
@@ -18,7 +18,7 @@ function Cell({ name, children }: { name: string; children: React.ReactNode }) {
   return (
     <div className="cell">
       <ErrorBoundary name={name}>
-        <Suspense fallback={<div className="loading">加载中…</div>}>{children}</Suspense>
+        <Suspense fallback={<Skeleton rows={8} />}>{children}</Suspense>
       </ErrorBoundary>
     </div>
   )
@@ -76,7 +76,7 @@ export default function App() {
     <div className="app">
       {route.kind === 'home' && <Home />}
       {route.kind === 'briefing' && (
-        <Suspense fallback={<div className="article"><div className="loading">加载中…</div></div>}>
+        <Suspense fallback={<div className="article"><Skeleton rows={12} tall /></div>}>
           <BriefingDetail date={route.date} />
         </Suspense>
       )}

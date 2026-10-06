@@ -1,6 +1,6 @@
 import { useJson } from '../framework/useJson'
 import { Briefing } from '../framework/briefing'
-import { ColHead } from '../framework/Section'
+import { ColHead, Skeleton } from '../framework/Section'
 
 type Entry = {
   date: string
@@ -24,7 +24,7 @@ export default function Archive() {
         updatedAt={updatedAt}
         stale={stale}
       />
-      {status === 'loading' && <div className="loading">加载中…</div>}
+      {status === 'loading' && <Skeleton rows={5} />}
       {status === 'error' && <div className="error">{error}</div>}
       {status === 'ready' && entries.length === 0 && <div className="empty">暂无存档</div>}
       {status === 'ready' && entries.length > 0 && (

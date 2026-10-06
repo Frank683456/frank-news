@@ -1,5 +1,5 @@
 import { useJson } from '../framework/useJson'
-import { Briefing } from '../framework/briefing'
+import { Briefing, moodColor, moodLabel } from '../framework/briefing'
 
 export default function BriefingHero() {
   const { status, data, error } = useJson<Briefing>('/data/briefing-latest.json', 5 * 60_000)
@@ -8,7 +8,10 @@ export default function BriefingHero() {
     return (
       <section className="hero">
         <div className="hero-kicker">今日 · 头条</div>
-        <div className="hero-empty">晨报加载中…</div>
+        <div className="skel hero-skel" aria-busy="true">
+          <span className="skel-bar" style={{ width: '70%', height: 44 }} />
+          <span className="skel-bar" style={{ width: '45%' }} />
+        </div>
       </section>
     )
   }
@@ -22,20 +25,31 @@ export default function BriefingHero() {
     )
   }
 
+  const mood = data.mood
   return (
     <section className="hero">
-      <div className="hero-kicker">今日 · 头条 · {data.date}</div>
+      <div className="hero-kicker">
+        <span>今日 · 头条 · {data.date}</span>
+        {mood && (
+          <span className="hero-mood" style={{ ['--mood' as string]: moodColor[mood] }}>
+            <i />市场情绪 · {moodLabel[mood]}
+          </span>
+        )}
+      </div>
       <h2 className="hero-title">{data.title}</h2>
       {data.subtitle && <p className="hero-dek">{data.subtitle}</p>}
       {data.highlights && data.highlights.length > 0 && (
-        <div className="hero-highlights">
-          {data.highlights.map((h, i) => (
-            <span key={i} className="chip">{h}</span>
+        <ol className="hero-points">
+          {data.highlights.slice(0, 5).map((h, i) => (
+            <li key={i}>
+              <span className="hp-n">{String(i + 1).padStart(2, '0')}</span>
+              <span className="hp-t">{h}</span>
+            </li>
           ))}
-        </div>
+        </ol>
       )}
       <a href={`#/briefing/${data.date}`} className="hero-cta">
-        阅读全文 →
+        阅读全文 <span aria-hidden="true">→</span>
       </a>
     </section>
   )

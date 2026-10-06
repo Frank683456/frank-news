@@ -82,14 +82,24 @@ const Icons = {
 
 function useTheme(): [Theme, () => void] {
   const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('fd_theme') as Theme | null
+    let saved: string | null = null
+    try {
+      saved = localStorage.getItem('fd_theme')
+    } catch {
+      /* ignore */
+    }
     if (saved === 'dark' || saved === 'light') return saved
     // 首访跟随系统偏好；手动切换过则记住的选择优先
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   })
   useEffect(() => {
     document.documentElement.dataset.theme = theme
-    localStorage.setItem('fd_theme', theme)
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#141210' : '#EFE7D5')
+    try {
+      localStorage.setItem('fd_theme', theme)
+    } catch {
+      /* 隐私模式写不进去就算了 */
+    }
   }, [theme])
   return [theme, () => setTheme((t) => (t === 'light' ? 'dark' : 'light'))]
 }
@@ -105,6 +115,14 @@ export default function Header() {
   const primaryTime = fmtTimeInTZ(now, localTZ)
   const bjTime = fmtTimeInTZ(now, 'Asia/Shanghai')
   const hello = greeting(now, localTZ)
+
+  const wxText =
+    wx.status === 'ready'
+      ? `${wx.data.city} ${wx.data.desc} ${wx.data.temp}° · H${wx.data.high} L${wx.data.low}${
+          wx.data.aqi != null ? ` · AQI ${wx.data.aqi}` : ''
+        }`
+      : null
+  const themeLabel = theme === 'light' ? '切换暗色' : '切换亮色'
 
   return (
     <>
@@ -122,16 +140,15 @@ export default function Header() {
         <div className="mast-r">
           <div>{hello}</div>
           <div className="mast-value">
-            {primaryTime} <span style={{ color: 'var(--ink-4)', marginLeft: 8 }}>BJ {bjTime}</span>
+            {primaryTime} <span className="mast-bj">BJ {bjTime}</span>
           </div>
-          {wx.status === 'ready' && (
-            <div className="mast-wx">
-              {wx.data.city} {wx.data.desc} {wx.data.temp}° · H{wx.data.high} L{wx.data.low}
-              {wx.data.aqi != null ? ` · AQI ${wx.data.aqi}` : ''}
-            </div>
-          )}
+          {wxText && <div className="mast-wx">{wxText}</div>}
         </div>
+        <button className="mast-theme" onClick={toggleTheme} aria-label={themeLabel} title={themeLabel}>
+          {theme === 'light' ? Icons.moon : Icons.sun}
+        </button>
       </header>
+      {wxText && <div className="mast-wx-m">{wxText}</div>}
       <div className="mast-rule" />
 
       <div className="topbar">
@@ -146,12 +163,7 @@ export default function Header() {
           )}
         </div>
         <div className="topbar-actions">
-          <button
-            className="btn"
-            onClick={toggleTheme}
-            aria-label="toggle color scheme"
-            title={theme === 'light' ? '切换暗色' : '切换亮色'}
-          >
+          <button className="btn" onClick={toggleTheme} aria-label={themeLabel} title={themeLabel}>
             {theme === 'light' ? Icons.moon : Icons.sun}
             <span>{theme === 'light' ? '暗色' : '亮色'}</span>
           </button>

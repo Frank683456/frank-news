@@ -23,9 +23,9 @@
 | 模块 | 数据源 | 多源交叉 |
 |---|---|---|
 | 今日晨报 | Claude Artifact JSON（Mac 推送） | — |
-| 市场速览 | Yahoo + Stooq + CoinGecko | ✅ |
-| 经济日历 | 手工 YAML (`updater/data-seed/econ_events.yaml`) | — |
-| 联合早报 | Google News RSS 站点过滤 + 链接解码（官方 RSS 已下线；when:1d 保新鲜） | — |
+| 市场速览 | Yahoo 主源 + CNBC 备源核对（Stooq 2026-10 失效已撤）+ 东方财富（沪深300 日线）+ CoinGecko；标题行显示「双源核对 / 备用源异常」 | ✅ |
+| 经济日历 | Mac 端 `scripts/push_econ.sh`（claude -p + WebSearch，每日 06:30）；时间统一换算成洛杉矶时间、财报只标盘前/盘后 | — |
+| 联合早报 | Google News RSS 站点过滤 + 链接解码（官方 RSS 已下线；when:1d 保新鲜；财经只取 /finance/world + /finance/china） | — |
 | 知乎热榜 | `api.zhihu.com/topstory/hot-list` | — |
 | 倒计时 | 手工 YAML（CN + US 分组） | — |
 | 博客最新 | frank2019.me Halo RSS | — |
