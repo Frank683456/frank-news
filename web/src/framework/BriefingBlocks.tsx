@@ -26,10 +26,12 @@ export function BlockView({ block }: { block: Block }) {
           <div>{block.text}</div>
         </div>
       )
-    case 'table':
+    case 'table': {
+      // 全是短格子（代码 / 板块名 / 涨跌幅这种）的表，手机上一屏放得下，不强制横滑（v1.5.0 板块表）
+      const compact = [block.headers ?? [], ...block.rows].every((r) => r.every((c) => String(c).length <= 8))
       return (
         <div className="table-wrap" tabIndex={0}>
-          <table>
+          <table className={compact ? 'compact' : undefined}>
             {block.headers && (
               <thead>
                 <tr>{block.headers.map((h, i) => <th key={i}>{h}</th>)}</tr>
@@ -45,6 +47,7 @@ export function BlockView({ block }: { block: Block }) {
           </table>
         </div>
       )
+    }
     case 'kpi': {
       // 按个数排成均衡的几行（5 个=3+2、7 个=4+3），最后一行自动撑满，不留空格子
       const n = block.metrics.length

@@ -1215,6 +1215,8 @@ h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -0.005em; }
     border-right-width: 2px;
   }
   .article .table-wrap table { min-width: 520px; }
+  .article .table-wrap table.compact { min-width: 0; }
+  .table-wrap table.compact th, .table-wrap table.compact td { padding: 9px 6px; white-space: nowrap; }
   .article nav.toc ol, .article .article-points { grid-template-columns: 1fr; }
   .kpi { flex-basis: calc(50% - 6px); }
   .kpi-value { font-size: 22px; }
@@ -1261,6 +1263,8 @@ h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -0.005em; }
 }
 
 @media (max-width: 360px) {
+  .table-wrap table.compact { font-size: 12px; }
+  .table-wrap table.compact th, .table-wrap table.compact td { padding: 8px 4px; }
   .mast-bj { display: block; margin-left: 0; font-size: 11px; }
   .hero-title { font-size: 30px; }
   .mk-p { font-size: 15px; }

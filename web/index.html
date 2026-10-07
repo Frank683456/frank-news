@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#EFE7D5" />
+    <!-- v1.5.0 手机 App（轻 PWA：只可安装，无 Service Worker / 离线 / 推送）。状态栏 default＝底色跟 theme-color 走，不沉浸 -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="晨报" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Frank · 晨报</title>
     <script>
       // 首帧就定好深浅色，避免先闪一下亮色（逻辑同 Header.tsx useTheme）
@@ -11,6 +19,8 @@
         var t = localStorage.getItem('fd_theme')
         if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
         document.documentElement.dataset.theme = t
+        // 顶栏 / iPhone 状态栏颜色首帧就对上（之后由 Header.tsx 切换时同步）
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'dark' ? '#141210' : '#EFE7D5')
       } catch (e) {}
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />

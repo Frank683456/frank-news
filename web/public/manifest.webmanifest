@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Frank 晨报",
+  "short_name": "晨报",
+  "description": "每日晨报、市场速览、经济日历",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#EFE7D5",
+  "theme_color": "#EFE7D5",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "今日晨报全文", "short_name": "今日全文", "url": "/#/briefing/latest" }
+  ]
+}
