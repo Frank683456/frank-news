@@ -11,12 +11,23 @@ export PATH="/opt/homebrew/bin:$PATH"
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 OUT_DIR="${ECON_OUT_DIR:-$HOME/briefing-archive}"
 DEST="${ECON_DEST:-etf:/opt/frank-news/data/econ.json}"
+CLAUDE_BIN="${ECON_CLAUDE_BIN:-claude}"   # 测试时指向假 claude
+# 少于这么多条就当这次没生成好（重试 / 放弃），不上传，看板上留着上一份。
+# 2026-06-23 起 136 份最少 4 条（7 月中旬旧提示词），2026-10-04 起每天都是 12 条。
+MIN_EVENTS="${ECON_MIN_EVENTS:-4}"
 TODAY="$(date +%F)"
 mkdir -p "$OUT_DIR"
 OUT="$OUT_DIR/econ-$TODAY.json"
 RAW_FILE="$OUT.raw"
 
 log() { echo "[push_econ] $*"; }
+# claude -p 子进程洗环境：去掉 CLAUDE* 和 NMEM_SPACE（从 Claude Code 里手动跑时会带进来）
+strip_claude_env() {
+  local v
+  for v in $(compgen -e); do
+    case "$v" in CLAUDE*|NMEM_SPACE) unset "$v" ;; esac
+  done
+}
 
 PROMPT="You are a financial data assistant. Use web search to find the schedule of market-moving events for the United States and China over the next 14 days, starting from today ($TODAY): macroeconomic releases AND major S&P 500 earnings reports.
 
@@ -53,8 +64,8 @@ while true; do
   CLEAN_DIR="/Users/Shared/claude-clean/econ-calendar"
   mkdir -p "$CLEAN_DIR/.claude"
   printf '%s\n' '{"autoMemoryEnabled": false, "disableAllHooks": true}' > "$CLEAN_DIR/.claude/settings.json"
-  (cd "$CLEAN_DIR" && env -u NMEM_SPACE ENABLE_CLAUDEAI_MCP_SERVERS=false \
-    PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" claude -p "$PROMPT" \
+  (cd "$CLEAN_DIR" && strip_claude_env && env -u NMEM_SPACE ENABLE_CLAUDEAI_MCP_SERVERS=false \
+    PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" "$CLAUDE_BIN" -p "$PROMPT" \
     --model claude-sonnet-5-5 \
     --effort high \
     --setting-sources project --strict-mcp-config \
@@ -62,7 +73,7 @@ while true; do
     --allowedTools "WebSearch,WebFetch" </dev/null) > "$RAW_FILE" 2>/dev/null || true
 
   # 从 RAW_FILE（argv，不走 stdin）提取第一个 { 到最后一个 }，校验 + 清洗，补 updatedAt（不信任 claude 自报时间）
-  if python3 - "$RAW_FILE" "$OUT" <<'PYEOF'
+  if python3 - "$RAW_FILE" "$OUT" "$MIN_EVENTS" <<'PYEOF'
 import re, sys, json, pathlib
 from datetime import datetime
 raw = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
@@ -135,6 +146,11 @@ for r in sorted(uniq, key=lambda r: -r["importance"]):
 picked = sorted(capped, key=lambda r: (-r["importance"], r["name"].startswith("财报"), r["date"]))[:12]
 SESSION_SORT = {"盘前": "05:00", "盘后": "13:00"}
 picked.sort(key=lambda r: (r["date"], r.get("time") or SESSION_SORT.get(r.get("session"), "99:99")))
+# 0 条 / 太少＝模型没搜到或全被窗口筛掉：不写文件、退出非 0 → 重试一次，还不行就放弃，
+# 服务器上那份 econ.json 不动（2026-11-05 前空数组也照传，看板日历会被刷成空白）
+if len(picked) < int(sys.argv[3]):
+    print(f"only {len(picked)} usable events (< {sys.argv[3]}), raw events={len(events)}", file=sys.stderr)
+    sys.exit(1)
 out = {"events": picked, "tz": "America/Los_Angeles",
        "updatedAt": datetime.now().astimezone().isoformat(timespec="seconds")}
 pathlib.Path(sys.argv[2]).write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
@@ -144,7 +160,7 @@ PYEOF
     rm -f "$RAW_FILE"
     break
   fi
-  log "JSON invalid on attempt $attempt (raw tail: $(tail -c 200 "$RAW_FILE" 2>/dev/null))"
+  log "JSON invalid or too few events on attempt $attempt (raw tail: $(tail -c 200 "$RAW_FILE" 2>/dev/null))"
   if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
     log "giving up after $MAX_ATTEMPTS attempts"
     exit 1

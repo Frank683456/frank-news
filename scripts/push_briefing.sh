@@ -17,6 +17,15 @@ OUT_DIR="${BRIEFING_OUT_DIR:-$HOME/briefing-archive}"
 #   "user@host:path" → scp to remote
 # default: etf 监控机（ssh 别名 etf·170.9.4.14·2026-10-05 从 Blog 服务器搬来）
 DEST="${DASHBOARD_DEST:-etf:/opt/frank-news/data/}"
+CLAUDE_BIN="${DASHBOARD_CLAUDE_BIN:-claude}"   # 测试时指向假 claude
+
+# claude -p 子进程洗环境：去掉 CLAUDE* 和 NMEM_SPACE（从 Claude Code 里手动跑时会带进来）
+strip_claude_env() {
+    local v
+    for v in $(compgen -e); do
+        case "$v" in CLAUDE*|NMEM_SPACE) unset "$v" ;; esac
+    done
+}
 
 mkdir -p "$OUT_DIR"
 OUT="$OUT_DIR/briefing-$DATE.json"
@@ -55,8 +64,8 @@ while true; do
     CLEAN_DIR="/Users/Shared/claude-clean/dashboard-briefing"
     mkdir -p "$CLEAN_DIR/.claude"
     printf '%s\n' '{"autoMemoryEnabled": false, "disableAllHooks": true}' > "$CLEAN_DIR/.claude/settings.json"
-    (cd "$CLEAN_DIR" && env -u NMEM_SPACE ENABLE_CLAUDEAI_MCP_SERVERS=false \
-        PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" claude -p --output-format text \
+    (cd "$CLEAN_DIR" && strip_claude_env && env -u NMEM_SPACE ENABLE_CLAUDEAI_MCP_SERVERS=false \
+        PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" "$CLAUDE_BIN" -p --output-format text \
         --model claude-sonnet-5-5 \
         --effort high \
         --setting-sources project --strict-mcp-config \
